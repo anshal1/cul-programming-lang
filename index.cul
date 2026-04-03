@@ -1,0 +1,5 @@
+let int x = 0;
+let int y = 1;
+let str s = "hello";
+const int z = 10;
+print x;
