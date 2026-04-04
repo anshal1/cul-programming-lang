@@ -3,9 +3,12 @@ package lexer
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/anshal1/custom-language/utils"
 )
 
 // import (
@@ -118,53 +121,6 @@ import (
 // }
 
 // v2 lexer
-var (
-	TT_LET        = "Let"
-	TT_CONST      = "Const"
-	TT_INTEGER    = "Int_Type"
-	TT_FLOAT      = "Float_Type"
-	TT_STRING     = "String_Type"
-	TT_BOOLEAN    = "Boolean_Type"
-	TT_NULL       = "Null_Type"
-	TT_SEMICOLON  = "Semicolon"
-	TT_ASSIGN     = "Assign"
-	TT_PLUS       = "Plus"
-	TT_MINUS      = "Minus"
-	TT_MULTIPLY   = "Multiply"
-	TT_DIVIDE     = "Divide"
-	TT_EOF        = "EOF"
-	TT_FUNCTION   = "Func"
-	TT_IDENT      = "Ident"
-	ILLEGAL       = "Illegal"
-	TT_PRINT_FUNC = "PrintFunc"
-)
-
-var (
-	PLUS      = '+'
-	MINUS     = '-'
-	MULTIPLY  = '*'
-	DIVIDE    = '/'
-	ASSIGN    = '='
-	SEMICOLON = ';'
-	STRING    = '"'
-)
-
-var keywords = map[string]string{
-	"let":   TT_LET,
-	"const": TT_CONST,
-	"float": TT_FLOAT,
-	"str":   TT_STRING,
-	"bool":  TT_BOOLEAN,
-	"null":  TT_NULL,
-	"int":   TT_INTEGER,
-	"print": TT_PRINT_FUNC,
-}
-
-type Token struct {
-	Symbol string
-	Value  string
-	LineNo int
-}
 
 type Tokenizer struct {
 	input  string
@@ -180,27 +136,31 @@ func NewTokenizer(input string, lineNo int) *Tokenizer {
 	}
 }
 
-func (t *Tokenizer) readString() Token {
+func (t *Tokenizer) readString() utils.Token {
 	// ignoring the double quotes
 	t.pos++
 	start := t.pos
 
-	for t.pos < len(t.input) && t.input[t.pos] != '"' {
+	for t.pos < len(t.input) {
+		if t.input[t.pos] == '"' {
+			t.pos++
+			break
+		}
 		t.pos++
 	}
-	return Token{Symbol: TT_STRING, Value: t.input[start:t.pos], LineNo: t.lineNo}
+	return utils.Token{Symbol: utils.TT_STRING, Value: t.input[start : t.pos-1], LineNo: t.lineNo}
 }
 
-func (t *Tokenizer) readIdentifier() Token {
+func (t *Tokenizer) readIdentifier() utils.Token {
 	start := t.pos
 	for isLetter(t.input[t.pos]) && t.pos <= len(t.input) {
 		t.pos++
 	}
 	word := t.input[start:t.pos]
-	if symbol, ok := keywords[word]; ok {
-		return Token{Symbol: symbol, Value: word, LineNo: t.lineNo}
+	if symbol, ok := utils.Keywords[word]; ok {
+		return utils.Token{Symbol: symbol, Value: word, LineNo: t.lineNo}
 	}
-	return Token{Symbol: TT_IDENT, Value: word, LineNo: t.lineNo}
+	return utils.Token{Symbol: utils.TT_IDENT, Value: word, LineNo: t.lineNo}
 }
 
 func (l *Tokenizer) skipWhitespace() {
@@ -226,45 +186,45 @@ func isLetter(ch byte) bool {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_'
 }
 
-func (l *Tokenizer) readNumber() Token {
+func (l *Tokenizer) readNumber() utils.Token {
 	start := l.pos
 	for l.pos < len(l.input) && isDigit(l.input[l.pos]) {
 		l.pos++
 	}
-	return Token{Symbol: TT_INTEGER, Value: l.input[start:l.pos], LineNo: l.lineNo}
+	return utils.Token{Symbol: utils.TT_INTEGER, Value: l.input[start:l.pos], LineNo: l.lineNo}
 }
 
-func (t *Tokenizer) Next() (Token, error) {
+func (t *Tokenizer) Next() (utils.Token, error) {
 	t.skipWhitespace()
 	if t.pos >= len(t.input) {
-		return Token{Symbol: TT_EOF, Value: "", LineNo: t.lineNo}, io.EOF
+		return utils.Token{Symbol: utils.TT_EOF, Value: "", LineNo: t.lineNo}, io.EOF
 	}
 	switch rune(t.input[t.pos]) {
-	case PLUS:
-		token := Token{Symbol: TT_PLUS, Value: string(t.input[t.pos]), LineNo: t.lineNo}
+	case utils.PLUS:
+		token := utils.Token{Symbol: utils.TT_PLUS, Value: string(t.input[t.pos]), LineNo: t.lineNo}
 		t.pos++
 		return token, nil
-	case MINUS:
-		token := Token{Symbol: TT_MINUS, Value: string(t.input[t.pos]), LineNo: t.lineNo}
+	case utils.MINUS:
+		token := utils.Token{Symbol: utils.TT_MINUS, Value: string(t.input[t.pos]), LineNo: t.lineNo}
 		t.pos++
 		return token, nil
-	case MULTIPLY:
-		token := Token{Symbol: TT_MULTIPLY, Value: string(t.input[t.pos]), LineNo: t.lineNo}
+	case utils.MULTIPLY:
+		token := utils.Token{Symbol: utils.TT_MULTIPLY, Value: string(t.input[t.pos]), LineNo: t.lineNo}
 		t.pos++
 		return token, nil
-	case DIVIDE:
-		token := Token{Symbol: TT_DIVIDE, Value: string(t.input[t.pos]), LineNo: t.lineNo}
+	case utils.DIVIDE:
+		token := utils.Token{Symbol: utils.TT_DIVIDE, Value: string(t.input[t.pos]), LineNo: t.lineNo}
 		t.pos++
 		return token, nil
-	case ASSIGN:
-		token := Token{Symbol: TT_ASSIGN, Value: string(t.input[t.pos]), LineNo: t.lineNo}
+	case utils.ASSIGN:
+		token := utils.Token{Symbol: utils.TT_ASSIGN, Value: string(t.input[t.pos]), LineNo: t.lineNo}
 		t.pos++
 		return token, nil
-	case SEMICOLON:
-		token := Token{Symbol: TT_SEMICOLON, Value: string(t.input[t.pos]), LineNo: t.lineNo}
+	case utils.SEMICOLON:
+		token := utils.Token{Symbol: utils.TT_SEMICOLON, Value: string(t.input[t.pos]), LineNo: t.lineNo}
 		t.pos++
 		return token, nil
-	case STRING:
+	case utils.STRING:
 		return t.readString(), nil
 	}
 	if isDigit(t.input[t.pos]) {
@@ -274,15 +234,16 @@ func (t *Tokenizer) Next() (Token, error) {
 		return t.readIdentifier(), nil
 	}
 	t.pos++
-	return Token{Symbol: ILLEGAL, Value: string(t.input[t.pos-1]), LineNo: t.lineNo}, errors.New("unknown token at position " + strconv.Itoa(t.pos-1) + ": " + string(t.input[t.pos-1]))
+	return utils.Token{Symbol: utils.ILLEGAL, Value: string(t.input[t.pos-1]), LineNo: t.lineNo}, errors.New("unknown token at position " + strconv.Itoa(t.pos-1) + ": " + string(t.input[t.pos-1]))
 }
 
-func Lexer(reader *bufio.Reader) []Token {
-	var tokens []Token = make([]Token, 0)
+func Lexer(reader *bufio.Reader) []utils.Token {
+	var tokens []utils.Token = make([]utils.Token, 0)
 	var lineNo int = 1
 	for {
-		l, err := reader.ReadString('\n')
+		l, err := reader.ReadString(';')
 		if err != nil {
+			fmt.Println(err)
 			break
 		}
 		line := strings.TrimSpace(l)
@@ -295,7 +256,8 @@ func Lexer(reader *bufio.Reader) []Token {
 			if err != nil {
 				break
 			}
-			if token.Symbol == TT_EOF {
+			if token.Symbol == utils.TT_EOF {
+				tokens = append(tokens, utils.Token{Symbol: "EOF", Value: "EOF", LineNo: lineNo})
 				break
 			}
 			tokens = append(tokens, token)

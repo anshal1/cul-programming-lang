@@ -1,24 +1,61 @@
 package utils
 
-import (
-	"log"
-	"strconv"
-	"strings"
+import "fmt"
+
+var (
+	TT_LET        = "Let"
+	TT_CONST      = "Const"
+	TT_INTEGER    = "Int_Value"
+	TT_FLOAT      = "Float_Value"
+	TT_STRING     = "String_Value"
+	TT_BOOLEAN    = "Boolean_Value"
+	TT_NULL       = "Null_Value"
+	TT_SEMICOLON  = "Semicolon"
+	TT_ASSIGN     = "Assign"
+	TT_PLUS       = "Plus"
+	TT_MINUS      = "Minus"
+	TT_MULTIPLY   = "Multiply"
+	TT_DIVIDE     = "Divide"
+	TT_EOF        = "EOF"
+	TT_FUNCTION   = "Func"
+	TT_IDENT      = "Ident"
+	ILLEGAL       = "Illegal"
+	TT_PRINT_FUNC = "PrintFunc"
+	TT_TYPE       = "Type"
 )
 
-func TypeCheck(vType string, value string) {
-	switch vType {
-	case "int":
-		if strings.HasPrefix(value, "\"") || strings.HasSuffix(value, "\"") {
-			log.Fatal("Invalid int value: ", value)
-		}
-		if _, err := strconv.Atoi(value); err != nil {
-			log.Fatal("Invalid int value: ", value)
-		}
-	case "str":
-		if !strings.HasPrefix(value, "\"") || !strings.HasSuffix(value, "\"") {
-			log.Fatal("Invalid str value: ", value)
-		}
-	}
+var (
+	PLUS      = '+'
+	MINUS     = '-'
+	MULTIPLY  = '*'
+	DIVIDE    = '/'
+	ASSIGN    = '='
+	SEMICOLON = ';'
+	STRING    = '"'
+)
 
+var Keywords = map[string]string{
+	"let":   TT_LET,
+	"const": TT_CONST,
+	"float": TT_TYPE,
+	"str":   TT_TYPE,
+	"bool":  TT_TYPE,
+	"null":  TT_TYPE,
+	"int":   TT_TYPE,
+	"print": TT_PRINT_FUNC,
+}
+
+type Token struct {
+	Symbol string
+	Value  string
+	LineNo int
+}
+
+const digits = "0123456789"
+
+func ValidateType(typetoken *Token, valueToken *Token) error {
+	value := valueToken.Value
+	ty := typetoken.Value
+	fmt.Println(value, ty)
+	return nil
 }

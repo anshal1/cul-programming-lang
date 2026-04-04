@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 
@@ -18,8 +17,10 @@ func main() {
 	defer file.Close()
 	reader := bufio.NewReader(file)
 
-	variables := lexer.Lexer(reader)
-	for _, v := range variables {
-		fmt.Printf("%+v\n", v)
+	tokens := lexer.Lexer(reader)
+	for _, token := range tokens {
+		log.Printf("%+v\n", token)
 	}
+	// parser := parser.NewParser(tokens)
+	// let.ParseLetStatement(parser)
 }
