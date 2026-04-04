@@ -46,6 +46,14 @@ var Keywords = map[string]string{
 	"print": TT_PRINT_FUNC,
 }
 
+var (
+	Str   = "str"
+	Int   = "int"
+	Float = "float"
+	Bool  = "bool"
+	Null  = "null"
+)
+
 type Token struct {
 	Symbol string
 	Value  string

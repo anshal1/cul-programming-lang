@@ -2,7 +2,7 @@ package let
 
 import (
 	"fmt"
-	"slices"
+	"strconv"
 
 	"github.com/anshal1/custom-language/parser"
 	"github.com/anshal1/custom-language/utils"
@@ -14,105 +14,87 @@ type LetStatement struct {
 	Value any
 }
 
-func ParseLetStatement(p *parser.Parser) {
-	for {
-		if p.CurrentToken().Symbol == "EOF" {
-			break
-		}
-		token, err := p.Expect(utils.TT_LET)
-		if err != nil {
-			fmt.Printf("%+v, %v\n", token, err)
-			break
-		}
-
-		typeToken, err := p.Expect(utils.TT_TYPE)
-		if err != nil {
-			fmt.Printf("%+v, %v\n", typeToken, err)
-			break
-		}
-
-		nameToken, err := p.Expect(utils.TT_IDENT)
-		if err != nil {
-			fmt.Printf("%+v, %v\n", nameToken, err)
-			break
-		}
-
-		assignToken, err := p.Expect(utils.TT_ASSIGN)
-		if err != nil {
-			fmt.Printf("%+v, %v\n", assignToken, err)
-			break
-		}
-		// checking the type and parsing the value accordingly
-		if typeToken.Symbol == "Type" {
-			switch typeToken.Value {
-			case "int":
-				valueToken, err := p.Expect(utils.TT_INTEGER)
-				if err != nil {
-					fmt.Printf("%+v %+v\n", valueToken, err)
-					break
-				}
-			case "str":
-				valueToken, err := p.Expect(utils.TT_STRING)
-				if err != nil {
-					fmt.Printf("%+v %+v\n", valueToken, err)
-					break
-				}
-			case "bool":
-				valueToken, err := p.Expect(utils.TT_BOOLEAN)
-				if err != nil {
-					fmt.Printf("%+v %+v\n", valueToken, err)
-					break
-				}
-			case "float":
-				valueToken, err := p.Expect(utils.TT_FLOAT)
-				if err != nil {
-					fmt.Printf("%+v %+v\n", valueToken, err)
-					break
-				}
-			case "null":
-				valueToken, err := p.Expect(utils.TT_NULL)
-				if err != nil {
-					fmt.Printf("%+v %+v\n", valueToken, err)
-					break
-				}
+func parseTypeAndValue(valueToken utils.Token, typeToken utils.Token, p *parser.Parser) (utils.Token, error) {
+	if valueToken.Symbol != utils.TT_IDENT {
+		switch typeToken.Value {
+		case utils.Int:
+			token, err := p.Expect(valueToken.Symbol)
+			_, err = strconv.Atoi(valueToken.Value)
+			if err != nil {
+				return utils.Token{}, err
 			}
-
-		} else if typeToken.Symbol == "Ident" {
-			idx := slices.IndexFunc(p.Tokens, func(t utils.Token) bool {
-				return t.Symbol == "Ident" && t.Value == typeToken.Value
-			})
-			if idx == -1 {
-				fmt.Println("variable not found")
-				break
+			return token, err
+		case utils.Str:
+			token, err := p.Expect(valueToken.Symbol)
+			if err != nil {
+				return utils.Token{}, err
 			}
-			fmt.Printf("%+v\n", p.Tokens[idx])
-		}
-		fmt.Printf("%+v\n", p.CurrentToken())
-		semiColonToken, err := p.Expect(utils.TT_SEMICOLON)
-		if err != nil {
-			fmt.Printf("%+v, %v\n", semiColonToken, err)
-			break
+			return token, err
 		}
 	}
+	p.Next()
+	return utils.Token{}, nil
+}
 
-	// nameToken, err := p.Expect(utils.TT_)
-	// if err != nil {
-	// 	return nil, err
-	// }
+func parse(token utils.Token, p *parser.Parser) (LetStatement, error) {
+	statement := LetStatement{}
+	if p.CurrentToken().Symbol == "EOF" {
+		return statement, nil
+	}
 
-	// valueToken, err := p.Expect(utils.TT_COLON)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	token, err := p.Expect(utils.TT_LET)
+	if err != nil {
+		fmt.Printf("%+v, %v\n", token, err)
 
-	// value, err := p.Expect(utils.TT_VALUE)
-	// if err != nil {
-	// 	return nil, err
-	// }
+		return statement, err
+	}
 
-	// return &LetStatement{
-	// 	Type:  token.Symbol,
-	// 	Name:  nameToken.Value,
-	// 	Value: value.Value,
-	// }, nil
+	typeToken, err := p.Expect(utils.TT_TYPE)
+	if err != nil {
+		fmt.Printf("%+v, %v\n", typeToken, err)
+
+		return statement, err
+	}
+
+	nameToken, err := p.Expect(utils.TT_IDENT)
+	if err != nil {
+		fmt.Printf("%+v, %v\n", nameToken, err)
+		return statement, err
+	}
+
+	assignToken, err := p.Expect(utils.TT_ASSIGN)
+	if err != nil {
+		fmt.Printf("%+v, %v\n", assignToken, err)
+		return statement, err
+	}
+
+	// value comes before semiColon
+	value, err := parseTypeAndValue(p.CurrentToken(), typeToken, p)
+	if err != nil {
+		return statement, err
+	}
+	statement.Value = value.Value
+
+	_, err = p.Expect(utils.TT_SEMICOLON)
+	if err != nil {
+		return statement, err
+	}
+	statement.Name = nameToken.Value
+	statement.Type = typeToken.Value
+	return statement, nil
+}
+
+func ParseLetStatement(p *parser.Parser) (*[]LetStatement, error) {
+	letStatement := make([]LetStatement, 0)
+	for {
+		statement, err := parse(p.CurrentToken(), p)
+		if err != nil {
+			return &letStatement, err
+		}
+		if statement.Name == "" {
+			break
+		}
+		letStatement = append(letStatement, statement)
+	}
+	return &letStatement, nil
 }
