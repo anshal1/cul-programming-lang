@@ -3,7 +3,6 @@ package lexer
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -197,7 +196,7 @@ func (l *Tokenizer) readNumber() utils.Token {
 func (t *Tokenizer) Next() (utils.Token, error) {
 	t.skipWhitespace()
 	if t.pos >= len(t.input) {
-		return utils.Token{Symbol: utils.TT_EOF, Value: "", LineNo: t.lineNo}, io.EOF
+		return utils.Token{Symbol: utils.TT_END_OF_STATEMENT, Value: utils.TT_END_OF_STATEMENT, LineNo: t.lineNo}, nil
 	}
 	switch rune(t.input[t.pos]) {
 	case utils.PLUS:
@@ -243,7 +242,10 @@ func Lexer(reader *bufio.Reader) []utils.Token {
 	for {
 		l, err := reader.ReadString(';')
 		if err != nil {
-			fmt.Println(err)
+			if errors.Is(err, io.EOF) {
+				token := utils.Token{Symbol: utils.TT_EOF, Value: utils.TT_EOF, LineNo: lineNo}
+				tokens = append(tokens, token)
+			}
 			break
 		}
 		line := strings.TrimSpace(l)
@@ -256,8 +258,7 @@ func Lexer(reader *bufio.Reader) []utils.Token {
 			if err != nil {
 				break
 			}
-			if token.Symbol == utils.TT_EOF {
-				tokens = append(tokens, utils.Token{Symbol: "EOF", Value: "EOF", LineNo: lineNo})
+			if token.Symbol == utils.TT_END_OF_STATEMENT {
 				break
 			}
 			tokens = append(tokens, token)

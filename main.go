@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/anshal1/custom-language/lexer"
+	"github.com/anshal1/custom-language/parser"
+	"github.com/anshal1/custom-language/parser/parseStatements/let"
 )
 
 func main() {
@@ -21,6 +23,6 @@ func main() {
 	for _, token := range tokens {
 		log.Printf("%+v\n", token)
 	}
-	// parser := parser.NewParser(tokens)
-	// let.ParseLetStatement(parser)
+	parser := parser.NewParser(tokens)
+	let.ParseLetStatement(parser)
 }
