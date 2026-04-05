@@ -20,9 +20,9 @@ func main() {
 	reader := bufio.NewReader(file)
 
 	tokens := lexer.Lexer(reader)
-	// for _, token := range tokens {
-	// 	log.Printf("%+v\n", token)
-	// }
+	for _, token := range tokens {
+		log.Printf("%+v\n", token)
+	}
 	parser := parser.NewParser(tokens)
 	letStatement, err := let.ParseLetStatement(parser)
 	if err != nil {

@@ -1,6 +1,7 @@
 package let
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -30,7 +31,43 @@ func parseTypeAndValue(valueToken utils.Token, typeToken utils.Token, p *parser.
 				return utils.Token{}, err
 			}
 			return token, err
+		case utils.Float:
+			token, err := p.Expect(valueToken.Symbol)
+			_, err = strconv.ParseFloat(valueToken.Value, 64)
+			if err != nil {
+				return utils.Token{}, err
+			}
+			return token, err
+		case utils.Null:
+			token, err := p.Expect(valueToken.Symbol)
+			if err != nil {
+				return utils.Token{}, err
+			}
+			return token, err
+		case utils.Bool:
+			token, err := p.Expect(valueToken.Symbol)
+			_, err = strconv.ParseBool(valueToken.Value)
+			if err != nil {
+				return utils.Token{}, err
+			}
+			return token, err
 		}
+	} else {
+		var tokenExits utils.Token
+		for i, token := range p.Tokens {
+			if token.Symbol == utils.TT_TYPE {
+				t := p.Tokens[i+1]
+				if t.Value == valueToken.Value {
+					tokenExits = t
+					break
+				}
+			}
+		}
+		if tokenExits.Value == "" {
+			return utils.Token{}, errors.New("undefined variable " + valueToken.Value)
+		}
+		p.Next()
+		return tokenExits, nil
 	}
 	p.Next()
 	return utils.Token{}, nil
@@ -80,7 +117,7 @@ func parse(token utils.Token, p *parser.Parser) (LetStatement, error) {
 		return statement, err
 	}
 	statement.Name = nameToken.Value
-	statement.Type = typeToken.Value
+	statement.Type = "VARIABLE"
 	return statement, nil
 }
 
