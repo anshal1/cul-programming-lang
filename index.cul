@@ -1,2 +1,3 @@
-let str s = "hello";
+let str s = "Hello";
 let str y = s;
+let str z = y;

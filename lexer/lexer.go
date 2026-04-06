@@ -147,11 +147,7 @@ func (t *Tokenizer) readString() utils.Token {
 		}
 		t.pos++
 	}
-	var builder strings.Builder
-	builder.WriteRune('"')
-	builder.WriteString(t.input[start : t.pos-1])
-	builder.WriteRune('"')
-	return utils.Token{Symbol: utils.TT_STRING, Value: builder.String(), LineNo: t.lineNo}
+	return utils.Token{Symbol: utils.TT_STRING, Value: t.input[start : t.pos-1], LineNo: t.lineNo}
 }
 
 func (t *Tokenizer) readIdentifier() utils.Token {

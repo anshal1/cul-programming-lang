@@ -1,10 +1,9 @@
 package let
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
 
+	"github.com/anshal1/custom-language/environment"
 	"github.com/anshal1/custom-language/parser"
 	"github.com/anshal1/custom-language/utils"
 )
@@ -15,65 +14,41 @@ type LetStatement struct {
 	Value any
 }
 
-func parseTypeAndValue(valueToken utils.Token, typeToken utils.Token, p *parser.Parser) (utils.Token, error) {
+func parseValue(valueToken utils.Token, typeToken utils.Token, p *parser.Parser, env *environment.Environment) (utils.Token, error) {
 	if valueToken.Symbol != utils.TT_IDENT {
+
 		switch typeToken.Value {
 		case utils.Int:
-			token, err := p.Expect(valueToken.Symbol)
-			_, err = strconv.Atoi(valueToken.Value)
-			if err != nil {
-				return utils.Token{}, err
-			}
-			return token, err
-		case utils.Str:
-			token, err := p.Expect(valueToken.Symbol)
-			if err != nil {
-				return utils.Token{}, err
-			}
-			return token, err
+			p.Next()
+			return valueToken, nil
 		case utils.Float:
-			token, err := p.Expect(valueToken.Symbol)
-			_, err = strconv.ParseFloat(valueToken.Value, 64)
-			if err != nil {
-				return utils.Token{}, err
-			}
-			return token, err
-		case utils.Null:
-			token, err := p.Expect(valueToken.Symbol)
-			if err != nil {
-				return utils.Token{}, err
-			}
-			return token, err
+			p.Next()
+			return valueToken, nil
+		case utils.Str:
+			p.Next()
+			return valueToken, nil
 		case utils.Bool:
-			token, err := p.Expect(valueToken.Symbol)
-			_, err = strconv.ParseBool(valueToken.Value)
-			if err != nil {
-				return utils.Token{}, err
-			}
-			return token, err
+			p.Next()
+			return valueToken, nil
+		case utils.Null:
+			p.Next()
+			return valueToken, nil
+		default:
+			return utils.Token{}, fmt.Errorf("line %d: unexpected value %q", valueToken.LineNo, valueToken.Value)
 		}
-	} else {
-		var tokenExits utils.Token
-		for i, token := range p.Tokens {
-			if token.Symbol == utils.TT_TYPE {
-				t := p.Tokens[i+1]
-				if t.Value == valueToken.Value {
-					tokenExits = t
-					break
-				}
-			}
-		}
-		if tokenExits.Value == "" {
-			return utils.Token{}, errors.New("undefined variable " + valueToken.Value)
-		}
-		p.Next()
-		return tokenExits, nil
+	}
+	val, ok := env.Get(valueToken.Value)
+	if !ok {
+		return utils.Token{}, fmt.Errorf("line %d: undefined variable %q", valueToken.LineNo, valueToken.Value)
+	}
+	if val.Type != typeToken.Value {
+		return utils.Token{}, fmt.Errorf("line %d: type mismatch — cannot assign %s to %s", valueToken.LineNo, val.Type, typeToken.Value)
 	}
 	p.Next()
-	return utils.Token{}, nil
+	return val.Token, nil
 }
 
-func parse(token utils.Token, p *parser.Parser) (LetStatement, error) {
+func parse(p *parser.Parser, env *environment.Environment) (LetStatement, error) {
 	statement := LetStatement{}
 	if p.CurrentToken().Symbol == "EOF" {
 		return statement, nil
@@ -106,7 +81,7 @@ func parse(token utils.Token, p *parser.Parser) (LetStatement, error) {
 	}
 
 	// value comes before semiColon
-	value, err := parseTypeAndValue(p.CurrentToken(), typeToken, p)
+	value, err := parseValue(p.CurrentToken(), typeToken, p, env)
 	if err != nil {
 		return statement, err
 	}
@@ -118,13 +93,19 @@ func parse(token utils.Token, p *parser.Parser) (LetStatement, error) {
 	}
 	statement.Name = nameToken.Value
 	statement.Type = "VARIABLE"
+	env.Set(nameToken.Value, environment.Value{
+		Type:  typeToken.Value,
+		Value: value.Value,
+		Token: value,
+	})
 	return statement, nil
 }
 
 func ParseLetStatement(p *parser.Parser) (*[]LetStatement, error) {
 	letStatement := make([]LetStatement, 0)
+	env := environment.NewEnv()
 	for {
-		statement, err := parse(p.CurrentToken(), p)
+		statement, err := parse(p, env)
 		if err != nil {
 			return &letStatement, err
 		}
