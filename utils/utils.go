@@ -1,7 +1,5 @@
 package utils
 
-import "fmt"
-
 var (
 	TT_LET              = "Let"
 	TT_CONST            = "Const"
@@ -58,13 +56,4 @@ type Token struct {
 	Symbol string
 	Value  string
 	LineNo int
-}
-
-const digits = "0123456789"
-
-func ValidateType(typetoken *Token, valueToken *Token) error {
-	value := valueToken.Value
-	ty := typetoken.Value
-	fmt.Println(value, ty)
-	return nil
 }

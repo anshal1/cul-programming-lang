@@ -150,6 +150,8 @@ func (t *Tokenizer) readString() utils.Token {
 	return utils.Token{Symbol: utils.TT_STRING, Value: t.input[start : t.pos-1], LineNo: t.lineNo}
 }
 
+// reads variable type and name
+
 func (t *Tokenizer) readIdentifier() utils.Token {
 	start := t.pos
 	for isLetter(t.input[t.pos]) && t.pos <= len(t.input) {
@@ -187,10 +189,24 @@ func isLetter(ch byte) bool {
 
 func (l *Tokenizer) readNumber() utils.Token {
 	start := l.pos
-	for l.pos < len(l.input) && isDigit(l.input[l.pos]) {
-		l.pos++
+	dotCount := 0
+	for l.pos < len(l.input) {
+		if l.input[l.pos] == byte('.') && dotCount == 0 {
+			dotCount += 1
+			l.pos++
+		} else if isDigit(l.input[l.pos]) {
+			l.pos++
+		} else {
+			break
+		}
 	}
-	return utils.Token{Symbol: utils.TT_INTEGER, Value: l.input[start:l.pos], LineNo: l.lineNo}
+	var symbol string
+	if dotCount != 0 {
+		symbol = utils.TT_FLOAT
+	} else {
+		symbol = utils.TT_INTEGER
+	}
+	return utils.Token{Symbol: symbol, Value: l.input[start:l.pos], LineNo: l.lineNo}
 }
 
 func (t *Tokenizer) Next() (utils.Token, error) {
