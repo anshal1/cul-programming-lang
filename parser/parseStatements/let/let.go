@@ -19,18 +19,33 @@ func parseValue(valueToken utils.Token, typeToken utils.Token, p *parser.Parser,
 
 		switch typeToken.Value {
 		case utils.Int:
+			if valueToken.Symbol != utils.TT_INTEGER {
+				return valueToken, fmt.Errorf("line %d: type mismatch — declared %s but got %s", valueToken.LineNo, typeToken.Value, valueToken.Symbol)
+			}
 			p.Next()
 			return valueToken, nil
 		case utils.Float:
+			if valueToken.Symbol != utils.TT_FLOAT {
+				return valueToken, fmt.Errorf("line %d: type mismatch — declared %s but got %s", valueToken.LineNo, typeToken.Value, valueToken.Symbol)
+			}
 			p.Next()
 			return valueToken, nil
 		case utils.Str:
+			if valueToken.Symbol != utils.TT_STRING {
+				return valueToken, fmt.Errorf("line %d: type mismatch — declared %s but got %s", valueToken.LineNo, typeToken.Value, valueToken.Symbol)
+			}
 			p.Next()
 			return valueToken, nil
 		case utils.Bool:
+			if valueToken.Symbol != utils.TT_BOOLEAN {
+				return valueToken, fmt.Errorf("line %d: type mismatch — declared %s but got %s", valueToken.LineNo, typeToken.Value, valueToken.Symbol)
+			}
 			p.Next()
 			return valueToken, nil
 		case utils.Null:
+			if valueToken.Symbol != utils.TT_NULL {
+				return valueToken, fmt.Errorf("line %d: type mismatch — declared %s but got %s", valueToken.LineNo, typeToken.Value, valueToken.Symbol)
+			}
 			p.Next()
 			return valueToken, nil
 		default:
@@ -51,6 +66,9 @@ func parseValue(valueToken utils.Token, typeToken utils.Token, p *parser.Parser,
 func parse(p *parser.Parser, env *environment.Environment) (LetStatement, error) {
 	statement := LetStatement{}
 	if p.CurrentToken().Symbol == "EOF" {
+		return statement, nil
+	}
+	if p.CurrentToken().Symbol != utils.TT_LET {
 		return statement, nil
 	}
 
